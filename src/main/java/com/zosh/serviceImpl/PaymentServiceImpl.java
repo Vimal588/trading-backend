@@ -34,6 +34,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Value("${razorpay.api.secret:u0O8fXQzUrRBo7g6aXaZg1VM}")
     private String apiSecretKey;
+
+    @Value("${frontend.url:https://trading-frontend-lemon.vercel.app}")
+    private String frontendUrl;
     @Override
     public PaymentOrder createOrder(User user, Long amount, PaymentMethod paymentMethod) {
 
@@ -206,7 +209,7 @@ public class PaymentServiceImpl implements PaymentService {
             // Callback
             paymentLinkRequest.put(
                     "callback_url",
-                    "http://localhost:5173/wallet?order_id="+orderId
+                    frontendUrl + "/wallet?order_id=" + orderId
             );
 
             paymentLinkRequest.put(
@@ -247,8 +250,8 @@ public class PaymentServiceImpl implements PaymentService {
         SessionCreateParams params = SessionCreateParams.builder()
                 .addPaymentMethodType(SessionCreateParams.PaymentMethodType.CARD)
                 .setMode(SessionCreateParams.Mode.PAYMENT)
-                .setSuccessUrl("http://localhost:5173/wallet?order_id="+orderId)
-                .setCancelUrl("http://localhost:5173/payment/cancel")
+                .setSuccessUrl(frontendUrl + "/wallet?order_id=" + orderId)
+                .setCancelUrl(frontendUrl + "/wallet")
                 .addLineItem(SessionCreateParams.LineItem.builder().setQuantity(1L).setPriceData(SessionCreateParams.LineItem.PriceData.builder().setCurrency("usd").setUnitAmount(amount*100).setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder().setName("Top up wallet").build()).build()).build()).build();
         Session session = Session.create(params);
         System.out.println("session ________"+session);
