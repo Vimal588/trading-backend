@@ -59,8 +59,12 @@ public class AppConfig {
 
                 CorsConfiguration cfg = new CorsConfiguration();
 
-                cfg.addAllowedOrigin("http://localhost:5173");
-                cfg.addAllowedOrigin("http://localhost:3000");
+            cfg.setAllowedOriginPatterns(Arrays.asList(
+                        "http://localhost:5173",
+                        "http://localhost:3000",
+                        "trading-frontend-lemon.vercel.app"  
+                                                                 // <-- Covers all Vercel domains!
+                ));
 
                 cfg.setAllowedMethods(
                         Collections.singletonList("*")
