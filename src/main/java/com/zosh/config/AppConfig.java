@@ -1,19 +1,18 @@
 package com.zosh.config;
 
-import jakarta.servlet.http.HttpServletRequest;
-import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 
 @Configuration
 public class AppConfig {
@@ -25,65 +24,63 @@ public class AppConfig {
                 .sessionManagement(management ->
                         management.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
-
+                .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(
-                                "/api/signup",
-                                "/api/signin"
-                        ).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/auth/**", "/coins/**", "/home").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-
                 .addFilterBefore(
                         new JwtTokenValidator(),
                         BasicAuthenticationFilter.class
-                )
-
-                .csrf(csrf -> csrf.disable())
-
-                .cors(cors ->
-                        cors.configurationSource(corsConfigurationSource())
                 );
 
         return http.build();
     }
 
-    private CorsConfigurationSource corsConfigurationSource() {
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
 
-        return new CorsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
 
-            @Override
-            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+        // Support exact Vercel frontend, preview branches, and localhost
+        cfg.setAllowedOriginPatterns(Arrays.asList(
+                "https://trading-frontend-lemon.vercel.app",
+                "https://*.vercel.app",
+                "http://localhost:5173",
+                "http://localhost:3000",
+                "http://localhost:*"
+        ));
 
-                CorsConfiguration cfg = new CorsConfiguration();
+        // Allow all HTTP methods including OPTIONS for preflight
+        cfg.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"
+        ));
 
-                // 1. Add your exact Vercel frontend URL + Localhost
-                cfg.setAllowedOrigins(Arrays.asList(
-                        "https://trading-frontend-lemon.vercel.app",
-                        "http://localhost:5173",
-                        "http://localhost:3000"
-                ));
+        // Allow all headers and credentials
+        cfg.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
+        ));
 
-                // Also allow any preview deployments from Vercel
-                cfg.setAllowedOriginPatterns(Arrays.asList(
-                        "https://*.vercel.app",
-                        "http://localhost:*"
-                ));
+        cfg.setExposedHeaders(Arrays.asList("Authorization", "Content-Disposition"));
+        cfg.setAllowCredentials(true);
+        cfg.setMaxAge(3600L);
 
-                // 2. Explicitly allow all HTTP methods (including OPTIONS for preflight)
-                cfg.setAllowedMethods(Arrays.asList(
-                        "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"
-                ));
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
+    }
 
-                // 3. Allow credentials and all headers
-                cfg.setAllowCredentials(true);
-                cfg.setAllowedHeaders(Collections.singletonList("*"));
-                cfg.setExposedHeaders(Arrays.asList("Authorization"));
-                cfg.setMaxAge(3600L);
-
-                return cfg;
-            }
-        };
+    @Bean
+    public CorsFilter corsFilter() {
+        return new CorsFilter(corsConfigurationSource());
     }
 }
