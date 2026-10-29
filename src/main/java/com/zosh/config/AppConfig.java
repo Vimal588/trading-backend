@@ -54,32 +54,32 @@ public class AppConfig {
         return new CorsConfigurationSource() {
 
             @Override
-            public CorsConfiguration getCorsConfiguration(
-                    HttpServletRequest request) {
+            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
 
                 CorsConfiguration cfg = new CorsConfiguration();
 
-            cfg.setAllowedOriginPatterns(Arrays.asList(
+                // 1. Add your exact Vercel frontend URL + Localhost
+                cfg.setAllowedOrigins(Arrays.asList(
+                        "https://trading-frontend-lemon.vercel.app",
                         "http://localhost:5173",
-                        "http://localhost:3000",
-                        "trading-frontend-lemon.vercel.app"  
-                                                                 // <-- Covers all Vercel domains!
+                        "http://localhost:3000"
                 ));
 
-                cfg.setAllowedMethods(
-                        Collections.singletonList("*")
-                );
+                // Also allow any preview deployments from Vercel
+                cfg.setAllowedOriginPatterns(Arrays.asList(
+                        "https://*.vercel.app",
+                        "http://localhost:*"
+                ));
 
+                // 2. Explicitly allow all HTTP methods (including OPTIONS for preflight)
+                cfg.setAllowedMethods(Arrays.asList(
+                        "GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"
+                ));
+
+                // 3. Allow credentials and all headers
                 cfg.setAllowCredentials(true);
-
-                cfg.setExposedHeaders(
-                        Arrays.asList("Authorization")
-                );
-
-                cfg.setAllowedHeaders(
-                        Collections.singletonList("*")
-                );
-
+                cfg.setAllowedHeaders(Collections.singletonList("*"));
+                cfg.setExposedHeaders(Arrays.asList("Authorization"));
                 cfg.setMaxAge(3600L);
 
                 return cfg;
